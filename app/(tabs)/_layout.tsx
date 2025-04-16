@@ -1,46 +1,41 @@
-import React from "react";
-import { Tabs } from "expo-router";
-import { Home, BookOpen } from "lucide-react-native";
-import Colors from "@/constants/colors";
+import React from 'react';
+import { Tabs } from 'expo-router';
+import { Home, BookOpen } from 'lucide-react-native';
+import Colors from '@/constants/colors';
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors.light.primary,
-        tabBarInactiveTintColor: Colors.light.textLight,
+        tabBarActiveTintColor: Colors.primaryDark,
+        tabBarInactiveTintColor: Colors.textLight,
         tabBarStyle: {
-          borderTopColor: Colors.light.border,
-          backgroundColor: Colors.light.white,
-          elevation: 0,
-          shadowOpacity: 0.1,
+          backgroundColor: Colors.white,
+          borderTopColor: Colors.border,
         },
         headerStyle: {
-          backgroundColor: Colors.light.white,
-          elevation: 0,
-          shadowOpacity: 0.1,
-          borderBottomWidth: 1,
-          borderBottomColor: Colors.light.border,
+          backgroundColor: Colors.white,
         },
         headerTitleStyle: {
-          fontWeight: '600',
-          color: Colors.light.text,
+          color: Colors.text,
+          fontWeight: 'bold',
         },
+        headerShadowVisible: false,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Sign Translator",
-          tabBarLabel: "Translate",
+          title: 'Dịch Ngôn Ngữ Ký Hiệu',
+          tabBarLabel: 'Dịch',
           tabBarIcon: ({ color }) => <Home size={24} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="learn"
+        name="learning"
         options={{
-          title: "Learn Signs",
-          tabBarLabel: "Learn",
+          title: 'Học Ngôn Ngữ Ký Hiệu',
+          tabBarLabel: 'Học',
           tabBarIcon: ({ color }) => <BookOpen size={24} color={color} />,
         }}
       />

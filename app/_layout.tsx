@@ -5,6 +5,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { Platform } from "react-native";
 import { ErrorBoundary } from "./error-boundary";
+import Colors from "@/constants/colors";
 
 export const unstable_settings = {
   // Ensure that reloading on `/modal` keeps a back button present.
@@ -45,9 +46,26 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   return (
-    <Stack>
+    <Stack
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: Colors.white,
+        },
+        headerTintColor: Colors.primaryDark,
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+        headerShadowVisible: false,
+      }}
+    >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+      <Stack.Screen 
+        name="settings" 
+        options={{ 
+          presentation: "modal",
+          title: "Cài Đặt"
+        }} 
+      />
     </Stack>
   );
 }

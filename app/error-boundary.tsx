@@ -95,11 +95,11 @@ export class ErrorBoundary extends React.Component<Props, State> {
       return (
         <View style={styles.container}>
           <View style={styles.content}>
-            <Text style={styles.title}>Something went wrong</Text>
+            <Text style={styles.title}>Đã xảy ra lỗi</Text>
             <Text style={styles.subtitle}>{this.state.error?.message}</Text>
             {Platform.OS !== 'web' && (
               <Text style={styles.description}>
-                Please check your device logs for more details.
+                Vui lòng kiểm tra nhật ký thiết bị để biết thêm chi tiết.
               </Text>
             )}
           </View>
