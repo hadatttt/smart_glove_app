@@ -8,7 +8,7 @@ const DEFAULT_WEBSOCKET_URL = 'ws://10.0.2.2:8080';
 let websocket: WebSocket | null = null;
 
 // Kết nối với Raspberry Pi qua WebSocket
-export const connectToRaspberryPi = async (ipAddress: string = '10.0.2.2', port: number = 8080) => {
+export const connectToRaspberryPi = async (ipAddress: string = '', port: number = 8080) => {
   try {
     // Đóng kết nối cũ nếu có
     if (websocket) {

@@ -8,7 +8,7 @@ import { connectToRaspberryPi } from '@/services/raspberry-pi-service';
 export const ConnectionStatus = () => {
   const { connectionStatus } = useTranslationStore();
   const [isConnecting, setIsConnecting] = React.useState(false);
-  const [ipAddress, setIpAddress] = React.useState('10.0.2.2');
+  const [ipAddress, setIpAddress] = React.useState('192.168.119.90');
   const [port, setPort] = React.useState('8080');
 
   const handleConnect = async () => {

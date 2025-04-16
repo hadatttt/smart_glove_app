@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Client</title>
+    <style>
+        .connected {
+            color: green;
+        }
+        .disconnected {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Client</h1>
+    <input type="text" id="messageInput" placeholder="Nhập chữ cái...">
+    <button id="sendButton" disabled>Gửi</button>
+    <div id="status" class="disconnected">Chưa kết nối</div>
+    <div id="history"></div>
+
+    <script>
+        const socket = new WebSocket('ws://localhost:8080');
+        const sendButton = document.getElementById('sendButton');
+        const messageInput = document.getElementById('messageInput');
+        const statusElement = document.getElementById('status');
+
+        socket.onopen = () => {
+            statusElement.textContent = "Đã kết nối tới server";
+            statusElement.className = "connected";
+            sendButton.disabled = false;
+        };
+
+        socket.onmessage = (e) => {
+            const history = document.getElementById('history');
+            const entry = document.createElement('div');
+            entry.textContent = `Nhận: ${e.data}`;
+            history.prepend(entry);
+        };
+
+        socket.onclose = () => {
+            statusElement.textContent = "Mất kết nối";
+            statusElement.className = "disconnected";
+            sendButton.disabled = true;
+        };
+
+        function sendMessage() {
+            const value = messageInput.value.trim();
+            if (value) {
+                const jsonMessage = JSON.stringify({ letter: value }); // ⬅️ Gửi dưới dạng JSON
+                socket.send(jsonMessage);
+                messageInput.value = '';
+            }
+        }
+
+        sendButton.addEventListener('click', sendMessage);
+
+        messageInput.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
