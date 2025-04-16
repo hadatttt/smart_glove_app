@@ -57,7 +57,8 @@ export const connectToRaspberryPi = async (ipAddress: string = '', port: number 
           
           if (data.sentence) {
             // Thêm câu hoàn chỉnh vào danh sách tin nhắn
-            useTranslationStore.getState().addMessage(data.sentence);
+            // useTranslationStore.getState().addMessage(data.sentence);
+            useTranslationStore.getState().addCharacterToSentence(data.sentence);
           }
         } catch (error) {
           console.error('Lỗi khi xử lý dữ liệu WebSocket:', error);

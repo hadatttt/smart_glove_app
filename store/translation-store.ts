@@ -2,12 +2,14 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// Các interface của bạn giữ nguyên
 interface TranslationMessage {
   id: string;
   text: string;
   timestamp: number;
   isPending?: boolean;
 }
+
 
 interface ConnectionStatus {
   connected: boolean;
@@ -34,6 +36,7 @@ interface TranslationState {
   setReadingSpeed: (speed: number) => void;
   toggleRecording: () => void;
   resetCurrentInput: () => void;
+  addCharacterToSentence: (char: string) => void; // Mới
 }
 
 export const useTranslationStore = create<TranslationState>()(
@@ -49,17 +52,22 @@ export const useTranslationStore = create<TranslationState>()(
       isRecording: false,
       
       setCurrentLetter: (letter) => {
-        set({ currentLetter: letter });
-        // Tự động thêm vào câu hiện tại
-        if (letter) {
-          set({ currentSentence: get().currentSentence + letter });
-        }
+        if (!letter) return;
+        const newMessage = {
+          id: Date.now().toString(),
+          text: letter,
+          timestamp: Date.now(),
+        };
+        set((state) => ({
+          currentLetter: letter,
+          currentSentence: letter,
+          messages: [...state.messages, newMessage],
+        }));
       },
       
       setCurrentSentence: (sentence) => set({ currentSentence: sentence }),
       
       addMessage: (text, isPending = false) => set((state) => {
-        // Nếu là tin nhắn pending và đã có tin nhắn pending trước đó, cập nhật nó
         if (isPending && state.messages.length > 0 && state.messages[state.messages.length - 1].isPending) {
           const updatedMessages = [...state.messages];
           updatedMessages[updatedMessages.length - 1] = {
@@ -69,8 +77,7 @@ export const useTranslationStore = create<TranslationState>()(
           };
           return { messages: updatedMessages };
         }
-        
-        // Thêm tin nhắn mới
+
         return {
           messages: [
             ...state.messages,
@@ -86,24 +93,23 @@ export const useTranslationStore = create<TranslationState>()(
       
       updateLastMessage: (text) => set((state) => {
         if (state.messages.length === 0) return {};
-        
+
         const updatedMessages = [...state.messages];
         updatedMessages[updatedMessages.length - 1] = {
           ...updatedMessages[updatedMessages.length - 1],
           text,
           timestamp: Date.now(),
         };
-        
+
         return { messages: updatedMessages };
       }),
-      
+
       completeLastMessage: () => set((state) => {
         if (state.messages.length === 0) return {};
-        
+
         const updatedMessages = [...state.messages];
         const lastMessage = updatedMessages[updatedMessages.length - 1];
-        
-        // Chuyển tin nhắn pending thành hoàn chỉnh
+
         if (lastMessage.isPending) {
           updatedMessages[updatedMessages.length - 1] = {
             ...lastMessage,
@@ -111,40 +117,43 @@ export const useTranslationStore = create<TranslationState>()(
           };
           return { messages: updatedMessages };
         }
-        
+
         return {};
       }),
       
       clearMessages: () => set({ 
-        messages: [],
-        currentLetter: '',
+        messages: [], 
+        currentLetter: '', 
         currentSentence: '' 
       }),
-      
+
       setConnectionStatus: (status) => set({ connectionStatus: status }),
-      
+
       setReadingSpeed: (speed) => set({ readingSpeed: speed }),
-      
+
       toggleRecording: () => set((state) => ({ 
         isRecording: !state.isRecording,
-        // Reset khi bắt đầu ghi âm mới
         ...(!state.isRecording ? { 
           currentLetter: '', 
           currentSentence: '' 
-        } : {})
+        } : {}) 
       })),
-      
+
       resetCurrentInput: () => set({ 
         currentLetter: '', 
         currentSentence: '' 
+      }),
+
+      addCharacterToSentence: (char) => set((state) => {
+        const updatedSentence = state.currentSentence + char;
+        return { currentSentence: updatedSentence };
       }),
     }),
     {
       name: 'translation-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      // Chỉ lưu trữ những dữ liệu cần thiết
       partialize: (state) => ({
-        messages: state.messages.filter(m => !m.isPending), // Không lưu tin nhắn tạm
+        messages: state.messages.filter(m => !m.isPending),
         readingSpeed: state.readingSpeed,
       }),
     }

@@ -3,17 +3,9 @@ import { View, Text, StyleSheet, FlatList } from 'react-native';
 import Colors from '@/constants/colors';
 import { useTranslationStore } from '@/store/translation-store';
 import { speakText } from '@/services/raspberry-pi-service';
-
 export const ChatDialog = () => {
   const { messages, readingSpeed } = useTranslationStore();
   const flatListRef = React.useRef<FlatList>(null);
-
-  // Tự động cuộn xuống dưới khi có tin nhắn mới
-  React.useEffect(() => {
-    if (flatListRef.current && messages.length > 0) {
-      flatListRef.current.scrollToEnd({ animated: true });
-    }
-  }, [messages]);
 
   // Tự động đọc tin nhắn mới nhất
   React.useEffect(() => {
@@ -30,31 +22,34 @@ export const ChatDialog = () => {
       </View>
     );
   }
-
   return (
     <View style={styles.container}>
       <FlatList
         ref={flatListRef}
-        data={messages}
+        data={messages.slice(-10)} 
         renderItem={({ item }) => (
           <View style={styles.messageContainer}>
             <View style={styles.messageBubble}>
               <Text style={styles.messageText}>{item.text}</Text>
             </View>
             <Text style={styles.timestamp}>
-              {new Date(item.timestamp).toLocaleTimeString([], { 
-                hour: '2-digit', 
-                minute: '2-digit' 
+              {new Date(item.timestamp).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
               })}
             </Text>
           </View>
         )}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.contentContainer}
+        onContentSizeChange={() =>
+          flatListRef.current?.scrollToEnd({ animated: true })
+        }
       />
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
@@ -79,7 +74,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     color: Colors.textLight,
-    fontSize: 16,
+    fontSize: 20,
   },
   messageContainer: {
     alignItems: 'flex-end',

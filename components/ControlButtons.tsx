@@ -48,8 +48,8 @@ export const ControlButtons = () => {
   }, [isRecording, connectionStatus.connected, pulseAnim]);
   
   const handleReset = () => {
-    const textToRead = 'Chào bạn! Đây là một thử nghiệm phát âm.';
-    speakText(textToRead, 1.2); // Thử nghiệm với tốc độ đọc là 1.2
+    const textToRead = 'Đã xóa cuộc trò chuyện';
+    speakText(textToRead, 1.0);
     // Hiệu ứng xoay
     Animated.timing(rotateAnim, {
       toValue: 1,
