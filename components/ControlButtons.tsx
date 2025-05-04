@@ -1,148 +1,88 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing } from 'react-native';
-import { Mic, RotateCcw, Volume2, Volume1 } from 'lucide-react-native';
+import { RotateCcw, Volume2, Volume1 } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useTranslationStore } from '@/store/translation-store';
-import { startListeningForData, speakText } from '@/services/raspberry-pi-service';
+import { speakText } from '@/services/raspberry-pi-service';
 
 export const ControlButtons = () => {
-  const { isRecording, toggleRecording, messages, clearMessages, readingSpeed, setReadingSpeed, connectionStatus } = useTranslationStore();
-  
-  // Hiệu ứng cho nút ghi âm
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const {
+    clearMessages,
+    readingSpeed,
+    setReadingSpeed,
+    connectionStatus,
+    currentSentence,
+  } = useTranslationStore();
+
   const rotateAnim = useRef(new Animated.Value(0)).current;
-  
-  // Bắt đầu/dừng lắng nghe khi trạng thái ghi âm thay đổi
-  useEffect(() => {
-    let cleanup: (() => void) | undefined;
-    
-    if (isRecording && connectionStatus.connected) {
-      cleanup = startListeningForData();
-      
-      // Bắt đầu hiệu ứng nhịp đập
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.2,
-            duration: 800,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 800,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    } else {
-      // Dừng hiệu ứng nhịp đập
-      pulseAnim.setValue(1);
-      Animated.timing(pulseAnim).stop();
-    }
-    
-    return () => {
-      if (cleanup) cleanup();
-    };
-  }, [isRecording, connectionStatus.connected, pulseAnim]);
-  
+
   const handleReset = () => {
     const textToRead = 'Đã xóa cuộc trò chuyện';
     speakText(textToRead, 1.0);
-    // Hiệu ứng xoay
     Animated.timing(rotateAnim, {
       toValue: 1,
       duration: 500,
       easing: Easing.inOut(Easing.ease),
       useNativeDriver: true,
-    }).start(() => {
-      rotateAnim.setValue(0);
-    });
-    
+    }).start(() => rotateAnim.setValue(0));
+
     clearMessages();
   };
-  
+
   const handleSpeak = () => {
-    if (messages.length > 0) {
-      const latestMessage = messages[messages.length - 1];
-      speakText(latestMessage.text, readingSpeed);
+    if (!currentSentence || !currentSentence.trim()) {
+      console.log('Không có câu để đọc!');
+      speakText('Không có câu để đọc!', readingSpeed);
+      return;
     }
+    console.log('Đang đọc câu:', currentSentence);
+    speakText(currentSentence, readingSpeed);
   };
-  
+
   const spin = rotateAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg'],
   });
-  
+
   return (
     <View style={styles.container}>
       <View style={styles.buttonsContainer}>
-        <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-          <TouchableOpacity
-            style={[
-              styles.recordButton, 
-              isRecording && styles.recordingButton,
-              !connectionStatus.connected && styles.disabledButton
-            ]}
-            onPress={toggleRecording}
-            disabled={!connectionStatus.connected}
-          >
-            <Mic size={24} color={Colors.white} />
-          </TouchableOpacity>
-        </Animated.View>
-        
         <Animated.View style={{ transform: [{ rotate: spin }] }}>
           <TouchableOpacity style={styles.actionButton} onPress={handleReset}>
             <RotateCcw size={20} color={Colors.white} />
           </TouchableOpacity>
         </Animated.View>
-        
-        <TouchableOpacity 
-          style={[styles.actionButton, messages.length === 0 && styles.disabledButton]} 
+
+        <TouchableOpacity
+          style={styles.actionButton}
           onPress={handleSpeak}
-          disabled={messages.length === 0}
         >
           <Volume2 size={20} color={Colors.white} />
         </TouchableOpacity>
       </View>
-      
+
       <View style={styles.speedContainer}>
-        <TouchableOpacity 
-          style={styles.speedButton} 
-          onPress={() => setReadingSpeed(0.5)}
-          disabled={readingSpeed === 0.5}
-        >
-          <Volume1 size={14} color={readingSpeed === 0.5 ? Colors.primaryDark : Colors.textLight} />
-          <Text style={[styles.speedText, readingSpeed === 0.5 && styles.activeSpeedText]}>0.5x</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.speedButton} 
-          onPress={() => setReadingSpeed(1.0)}
-          disabled={readingSpeed === 1.0}
-        >
-          <Volume2 size={14} color={readingSpeed === 1.0 ? Colors.primaryDark : Colors.textLight} />
-          <Text style={[styles.speedText, readingSpeed === 1.0 && styles.activeSpeedText]}>1.0x</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.speedButton} 
-          onPress={() => setReadingSpeed(1.5)}
-          disabled={readingSpeed === 1.5}
-        >
-          <Volume2 size={16} color={readingSpeed === 1.5 ? Colors.primaryDark : Colors.textLight} />
-          <Text style={[styles.speedText, readingSpeed === 1.5 && styles.activeSpeedText]}>1.5x</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.speedButton} 
-          onPress={() => setReadingSpeed(2.0)}
-          disabled={readingSpeed === 2.0}
-        >
-          <Volume2 size={18} color={readingSpeed === 2.0 ? Colors.primaryDark : Colors.textLight} />
-          <Text style={[styles.speedText, readingSpeed === 2.0 && styles.activeSpeedText]}>2.0x</Text>
-        </TouchableOpacity>
+        {[0.5, 1.0, 1.5, 2.0].map((speed) => (
+          <TouchableOpacity
+            key={speed}
+            style={styles.speedButton}
+            onPress={() => setReadingSpeed(speed)}
+            disabled={readingSpeed === speed}
+          >
+            <Volume1
+              size={speed === 0.5 ? 14 : speed === 1.0 ? 14 : speed === 1.5 ? 16 : 18}
+              color={readingSpeed === speed ? Colors.primaryDark : Colors.textLight}
+            />
+            <Text
+              style={[
+                styles.speedText,
+                readingSpeed === speed && styles.activeSpeedText,
+              ]}
+            >
+              {speed}x
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
     </View>
   );
@@ -161,26 +101,6 @@ const styles = StyleSheet.create({
     gap: 24,
     marginBottom: 12,
   },
-  recordButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.primaryDark,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 6,
-  },
-  recordingButton: {
-    backgroundColor: Colors.error,
-  },
-  disabledButton: {
-    backgroundColor: Colors.textLight,
-    opacity: 0.6,
-  },
   actionButton: {
     width: 40,
     height: 40,
@@ -193,6 +113,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 3,
     elevation: 3,
+  },
+  disabledButton: {
+    backgroundColor: Colors.textLight,
+    opacity: 0.6,
   },
   speedContainer: {
     flexDirection: 'row',

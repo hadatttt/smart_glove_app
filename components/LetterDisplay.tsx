@@ -1,20 +1,40 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import Colors from '@/constants/colors';
 import { useTranslationStore } from '@/store/translation-store';
 
 export const LetterDisplay = () => {
-  const { currentLetter, currentSentence } = useTranslationStore();
+  const { currentLetter, currentSentence, checkFirebaseConnection, connectionStatus } = useTranslationStore();
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    checkFirebaseConnection(); // Kiểm tra kết nối Firebase khi component mount
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  }, [checkFirebaseConnection, fadeAnim]);
+
+  const displaySentence = currentSentence || 
+    (connectionStatus.firebaseConnected === false ? 'Không kết nối Firebase' : 'Đang chờ đầu vào...');
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <View style={styles.letterContainer}>
         <Text style={styles.letter}>{currentLetter || ' '}</Text>
       </View>
       <View style={styles.sentenceContainer}>
-        <Text style={styles.sentence}>{currentSentence || 'Đang chờ đầu vào...'}</Text>
+        <Text style={styles.sentence} numberOfLines={2}>
+          {displaySentence}
+        </Text>
+        {!connectionStatus.firebaseConnected && (
+          <Text style={styles.connectionStatus}>
+            {/* {connectionStatus.errorMessage || 'Kiểm tra kết nối'} */}
+          </Text>
+        )}
       </View>
-    </View>
+    </Animated.View>
   );
 };
 
@@ -22,44 +42,54 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     marginTop: 20,
+    padding: 16,
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
   },
   letterContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.3,
     shadowRadius: 4,
-    elevation: 4,
+    elevation: 5,
   },
   letter: {
-    fontSize: 48,
+    fontSize: 60,
     fontWeight: 'bold',
     color: Colors.white,
   },
   sentenceContainer: {
-    backgroundColor: Colors.white,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    backgroundColor: Colors.secondary,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     borderRadius: 16,
     width: '100%',
-    minHeight: 40,
+    minHeight: 60,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   sentence: {
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: '500',
     color: Colors.text,
+    textAlign: 'center',
+  },
+  connectionStatus: {
+    fontSize: 12,
+    color: Colors.error,
+    marginTop: 4,
     textAlign: 'center',
   },
 });

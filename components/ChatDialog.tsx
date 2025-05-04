@@ -3,15 +3,16 @@ import { View, Text, StyleSheet, FlatList } from 'react-native';
 import Colors from '@/constants/colors';
 import { useTranslationStore } from '@/store/translation-store';
 import { speakText } from '@/services/raspberry-pi-service';
+
 export const ChatDialog = () => {
   const { messages, readingSpeed } = useTranslationStore();
   const flatListRef = React.useRef<FlatList>(null);
 
-  // Tự động đọc tin nhắn mới nhất
   React.useEffect(() => {
     if (messages.length > 0) {
       const latestMessage = messages[messages.length - 1];
-      speakText(latestMessage.text, readingSpeed);
+      const textToSpeak = typeof latestMessage.cau === 'string' ? latestMessage.cau : latestMessage.text;
+      speakText(textToSpeak, readingSpeed);
     }
   }, [messages, readingSpeed]);
 
@@ -22,15 +23,18 @@ export const ChatDialog = () => {
       </View>
     );
   }
+
   return (
     <View style={styles.container}>
       <FlatList
         ref={flatListRef}
-        data={messages.slice(-10)} 
+        data={messages.slice(-10)}
         renderItem={({ item }) => (
           <View style={styles.messageContainer}>
             <View style={styles.messageBubble}>
-              <Text style={styles.messageText}>{item.text}</Text>
+              <Text style={styles.messageText}>
+                {typeof item.cau === 'string' ? item.cau : item.text}
+              </Text>
             </View>
             <Text style={styles.timestamp}>
               {new Date(item.timestamp).toLocaleTimeString([], {
@@ -49,7 +53,6 @@ export const ChatDialog = () => {
     </View>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {
