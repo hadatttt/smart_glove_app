@@ -8,7 +8,7 @@ export const LetterDisplay = () => {
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    checkFirebaseConnection(); // Kiểm tra kết nối Firebase khi component mount
+    checkFirebaseConnection();
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 500,

@@ -1,6 +1,5 @@
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-import { getDatabase } from "firebase/database"; // Thêm getDatabase
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getDatabase } from "firebase/database";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCCSXItwVo5IMv6M8cAc4lTidEf10yUwrM",
@@ -10,12 +9,10 @@ const firebaseConfig = {
   storageBucket: "sign-language-glove-4cc7c.firebasestorage.app",
   messagingSenderId: "1044775588976",
   appId: "1:1044775588976:web:e95614abf5f793a4df50b5",
-  measurementId: "G-XCT00REF7V"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const database = getDatabase(app); // Khởi tạo Realtime Database
+// Kiểm tra xem đã có app nào với tên [DEFAULT] chưa
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+const database = getDatabase(app);
 
-export { database }; // Export để sử dụng trong các file khác
+export { database };

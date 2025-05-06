@@ -1,9 +1,11 @@
-import React, { useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing } from 'react-native';
-import { RotateCcw, Volume2, Volume1 } from 'lucide-react-native';
+import React, { useRef, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, TextInput, Modal, Alert } from 'react-native';
+import { RotateCcw, Volume2, Volume1, Edit } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useTranslationStore } from '@/store/translation-store';
 import { speakText } from '@/services/raspberry-pi-service';
+import { database } from '../firebase/firebaseConfig';
+import { ref, set } from 'firebase/database';
 
 export const ControlButtons = () => {
   const {
@@ -11,10 +13,14 @@ export const ControlButtons = () => {
     readingSpeed,
     setReadingSpeed,
     connectionStatus,
+    currentLetter,
     currentSentence,
+    setCurrentSentence,
   } = useTranslationStore();
 
   const rotateAnim = useRef(new Animated.Value(0)).current;
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [editedSentence, setEditedSentence] = useState('');
 
   const handleReset = () => {
     const textToRead = 'Đã xóa cuộc trò chuyện';
@@ -39,6 +45,36 @@ export const ControlButtons = () => {
     speakText(currentSentence, readingSpeed);
   };
 
+  const handleEdit = () => {
+    setEditedSentence(currentSentence || '');
+    setIsEditModalVisible(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editedSentence.trim()) {
+      Alert.alert('Lỗi', 'Vui lòng nhập câu mới!');
+      return;
+    }
+
+    if (!currentLetter) {
+      Alert.alert('Lỗi', 'Không có chữ cái để cập nhật!');
+      return;
+    }
+
+    try {
+      const signRef = ref(database, `signs/${currentLetter}/sentences`);
+      await set(signRef, editedSentence);
+      console.log(`Đã cập nhật sentences cho ${currentLetter} thành: ${editedSentence}`);
+      setCurrentSentence(editedSentence);
+      speakText(`Đã cập nhật: ${editedSentence}`, readingSpeed);
+    } catch (error) {
+      console.error('Lỗi khi ghi vào Firebase:', error);
+      Alert.alert('Lỗi', 'Không thể cập nhật câu vào Firebase!');
+    }
+
+    setIsEditModalVisible(false);
+  };
+
   const spin = rotateAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg'],
@@ -53,11 +89,12 @@ export const ControlButtons = () => {
           </TouchableOpacity>
         </Animated.View>
 
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={handleSpeak}
-        >
+        <TouchableOpacity style={styles.actionButton} onPress={handleSpeak}>
           <Volume2 size={20} color={Colors.white} />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
+          <Edit size={20} color={Colors.white} />
         </TouchableOpacity>
       </View>
 
@@ -84,6 +121,42 @@ export const ControlButtons = () => {
           </TouchableOpacity>
         ))}
       </View>
+
+      <Modal
+        visible={isEditModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsEditModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Chỉnh sửa</Text>
+            <Text style={styles.modalLetter}>Chữ cái: {currentLetter || 'Không có'}</Text>
+            <TextInput
+              style={styles.textInput}
+              value={editedSentence}
+              onChangeText={setEditedSentence}
+              placeholder="Nhập câu mới..."
+              multiline={true}
+              numberOfLines={3}
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={handleSaveEdit}
+              >
+                <Text style={styles.modalButtonText}>Lưu</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => setIsEditModalVisible(false)}
+              >
+                <Text style={styles.modalButtonText}>Hủy</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -139,6 +212,57 @@ const styles = StyleSheet.create({
   },
   activeSpeedText: {
     color: Colors.primaryDark,
+    fontWeight: 'bold',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 16,
+    width: '80%',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.text,
+    marginBottom: 12,
+  },
+  modalLetter: {
+    fontSize: 16,
+    color: Colors.textLight,
+    marginBottom: 12,
+  },
+  textInput: {
+    width: '100%',
+    height: 80,
+    borderWidth: 1,
+    borderColor: Colors.secondary,
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 12,
+    textAlignVertical: 'top',
+    color: Colors.text,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  modalButton: {
+    backgroundColor: Colors.primaryDark,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  modalButtonText: {
+    color: Colors.white,
+    fontSize: 14,
     fontWeight: 'bold',
   },
 });

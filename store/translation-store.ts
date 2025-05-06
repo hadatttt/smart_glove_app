@@ -60,13 +60,13 @@ export const useTranslationStore = create<TranslationState>()(
           const snapshotBB = await firebaseGet(ref(database, `signs/${letter}${letter}`));
           if (snapshotBB.exists && typeof snapshotBB.exists === 'function' && snapshotBB.exists()) {
             const data = snapshotBB.val();
-            sentence = typeof data === 'string' ? data : (data.sentence || 'Không có câu cho chữ này');
+            sentence = typeof data === 'string' ? data : (data.sentences || 'Không có câu cho chữ này'); // Sửa thành data.sentences
             console.log(`Data at signs/${letter}${letter}:`, data);
           } else {
             const snapshotSingle = await firebaseGet(ref(database, `signs/${letter}`));
             if (snapshotSingle.exists && typeof snapshotSingle.exists === 'function' && snapshotSingle.exists()) {
               const data = snapshotSingle.val();
-              sentence = typeof data === 'string' ? data : (data.sentence || 'Không có câu cho chữ này');
+              sentence = typeof data === 'string' ? data : (data.sentences || 'Không có câu cho chữ này'); // Sửa thành data.sentences
               console.log(`Data at signs/${letter}:`, data);
             } else {
               console.log(`No data at signs/${letter}${letter} or signs/${letter}`);
@@ -214,7 +214,7 @@ export const useTranslationStore = create<TranslationState>()(
             }
           },
           (error) => {
-            // console.error('Lỗi khi kiểm tra kết nối Firebase:', error);
+            console.error('Lỗi khi kiểm tra kết nối Firebase:', error);
             set((state) => ({
               connectionStatus: {
                 ...state.connectionStatus,

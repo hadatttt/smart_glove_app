@@ -2,8 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';
 import Colors from '@/constants/colors';
-import { LearningItem } from '@/types/translation';
-
+import imageMap from '@/constants/imageMap';
+import { LearningItem } from '@/types/types';
 interface LearningDetailProps {
   item: LearningItem;
   onBack: () => void;
@@ -16,21 +16,28 @@ export const LearningDetail = ({ item, onBack }: LearningDetailProps) => {
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <ArrowLeft size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{item.word || item.letter}</Text>
+        <Text style={styles.headerTitle}>{item.letter}</Text>
         <View style={{ width: 24 }} />
       </View>
       
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
         <Image 
-          source={{ uri: item.imageUrl }} 
+          source={imageMap[item.imageKey] || imageMap['default']}
           style={styles.image}
           resizeMode="contain"
         />
         
         <View style={styles.infoContainer}>
-          <Text style={styles.title}>{item.word || item.letter}</Text>
+          <Text style={styles.title}>{item.letter}</Text>
           <Text style={styles.description}>{item.description}</Text>
           
+          {item.sentences && (
+            <View style={styles.instructionsContainer}>
+              <Text style={styles.instructionsTitle}>Ví dụ sử dụng:</Text>
+              <Text style={styles.stepText}>{item.sentences}</Text>
+            </View>
+          )}
+
           <View style={styles.instructionsContainer}>
             <Text style={styles.instructionsTitle}>Cách thực hiện:</Text>
             <View style={styles.instructionStep}>
@@ -114,6 +121,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: 12,
     padding: 16,
+    marginTop: 16,
   },
   instructionsTitle: {
     fontSize: 18,

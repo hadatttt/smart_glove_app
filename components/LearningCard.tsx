@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import Colors from '@/constants/colors';
-import { LearningItem } from '@/types/translation';
+import imageMap from '../constants/imageMap';
+import { LearningItem } from '../types/types';
 
 interface LearningCardProps {
   item: LearningItem;
@@ -17,13 +18,13 @@ export const LearningCard = ({ item, onPress }: LearningCardProps) => {
     >
       <View style={styles.imageContainer}>
         <Image 
-          source={{ uri: item.imageUrl }} 
+          source={imageMap[item.imageKey] || imageMap['default']}
           style={styles.image}
           resizeMode="cover"
         />
       </View>
       <View style={styles.textContainer}>
-        <Text style={styles.title}>{item.word || item.letter}</Text>
+        <Text style={styles.title}>{item.letter}</Text>
         <Text style={styles.description} numberOfLines={2}>
           {item.description}
         </Text>
