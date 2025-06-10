@@ -22,6 +22,7 @@ interface ConnectionStatus {
 interface TranslationState {
   currentLetter: string;
   currentSentence: string;
+  lastLetter: string;
   messages: TranslationMessage[];
   connectionStatus: ConnectionStatus;
   readingSpeed: number;
@@ -46,6 +47,7 @@ export const useTranslationStore = create<TranslationState>()(
     (set, getState) => ({
       currentLetter: '',
       currentSentence: '',
+      lastLetter: '',
       messages: [],
       connectionStatus: {
         connected: false,
@@ -54,24 +56,38 @@ export const useTranslationStore = create<TranslationState>()(
       isRecording: false,
 
       setCurrentLetter: async (letter) => {
-        if (!letter) return;
+        if (!letter) return; // Skip if letter is empty
+        const state = getState();
         let sentence = 'Không có câu cho chữ này';
+        const isDuplicate = letter === state.lastLetter;
+
+        // Clear previous state if it's a duplicate
+        if (isDuplicate) {
+          set((state) => ({
+            currentLetter: '',
+            currentSentence: '',
+            messages: state.messages.slice(0, -1), // Remove the last message
+          }));
+        }
+
         try {
           const snapshotBB = await firebaseGet(ref(database, `signs/${letter}${letter}`));
           if (snapshotBB.exists && typeof snapshotBB.exists === 'function' && snapshotBB.exists()) {
             const data = snapshotBB.val();
-            sentence = typeof data === 'string' ? data : (data.sentences || 'Không có câu cho chữ này'); // Sửa thành data.sentences
+            sentence = typeof data === 'string' ? data : (data.sentences || 'Không có câu cho chữ này');
             console.log(`Data at signs/${letter}${letter}:`, data);
           } else {
             const snapshotSingle = await firebaseGet(ref(database, `signs/${letter}`));
             if (snapshotSingle.exists && typeof snapshotSingle.exists === 'function' && snapshotSingle.exists()) {
               const data = snapshotSingle.val();
-              sentence = typeof data === 'string' ? data : (data.sentences || 'Không có câu cho chữ này'); // Sửa thành data.sentences
+              sentence = typeof data === 'string' ? data : (data.sentences || 'Không có câu cho chữ này');
               console.log(`Data at signs/${letter}:`, data);
             } else {
               console.log(`No data at signs/${letter}${letter} or signs/${letter}`);
             }
           }
+          // Clean up trailing repetitive characters
+          sentence = sentence.replace(/(.)\1+$/, '$1');
         } catch (error) {
           console.error('Lỗi khi đọc Firebase:', error);
           sentence = 'Lỗi khi lấy dữ liệu';
@@ -80,6 +96,7 @@ export const useTranslationStore = create<TranslationState>()(
         set((state) => ({
           currentLetter: letter,
           currentSentence: sentence,
+          lastLetter: letter,
           messages: [
             ...state.messages,
             {
@@ -154,6 +171,7 @@ export const useTranslationStore = create<TranslationState>()(
         messages: [],
         currentLetter: '',
         currentSentence: '',
+        lastLetter: '',
       }),
 
       setConnectionStatus: (status) => set({ connectionStatus: status }),
@@ -165,12 +183,14 @@ export const useTranslationStore = create<TranslationState>()(
         ...(!state.isRecording ? {
           currentLetter: '',
           currentSentence: '',
+          lastLetter: '',
         } : {}),
       })),
 
       resetCurrentInput: () => set({
         currentLetter: '',
         currentSentence: '',
+        lastLetter: '',
       }),
 
       addCharacterToSentence: (char) => set((state) => {
@@ -192,12 +212,12 @@ export const useTranslationStore = create<TranslationState>()(
                   errorMessage: undefined,
                 },
               }));
-              const testRef = ref(database, 'signs/B');
+              const testRef = ref(database, 'signs/A');
               firebaseGet(testRef).then((snap) => {
                 if (snap.exists()) {
-                  console.log('Dữ liệu test từ signs/B:', snap.val());
+                  console.log('Dữ liệu test từ signs/A:', snap.val());
                 } else {
-                  console.log('Không tìm thấy dữ liệu tại signs/B');
+                  console.log('Không tìm thấy dữ liệu tại signs/A');
                 }
               }).catch((error) => {
                 console.error('Lỗi khi đọc dữ liệu test:', error);

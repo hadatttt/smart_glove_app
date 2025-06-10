@@ -9,12 +9,17 @@ export const LetterDisplay = () => {
 
   useEffect(() => {
     checkFirebaseConnection();
+  }, [checkFirebaseConnection]);
+
+  // Re-trigger fade animation whenever currentLetter changes
+  useEffect(() => {
+    fadeAnim.setValue(0); // Reset opacity
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 500,
       useNativeDriver: true,
     }).start();
-  }, [checkFirebaseConnection, fadeAnim]);
+  }, [currentLetter, fadeAnim]);
 
   const displaySentence = currentSentence || 
     (connectionStatus.firebaseConnected === false ? 'Không kết nối Firebase' : 'Đang chờ đầu vào...');

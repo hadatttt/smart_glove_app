@@ -35,16 +35,32 @@ export const ControlButtons = () => {
     clearMessages();
   };
 
+  // const handleSpeak = () => {
+  //   if (!currentSentence || !currentSentence.trim()) {
+  //     console.log('Không có câu để đọc!');
+  //     speakText('Không có câu để đọc!', readingSpeed);
+  //     return;
+  //   }
+  //   console.log('Đang đọc câu:', currentSentence);
+  //   speakText(currentSentence, readingSpeed);
+  // };
+const [lastSpokenLetter, setLastSpokenLetter] = useState<string | null>(null);
+
   const handleSpeak = () => {
     if (!currentSentence || !currentSentence.trim()) {
       console.log('Không có câu để đọc!');
       speakText('Không có câu để đọc!', readingSpeed);
       return;
     }
+    // Nếu ký tự hiện tại trùng với ký tự đã đọc trước đó, không đọc lại
+    if (currentLetter && lastSpokenLetter === currentLetter) {
+      console.log('Đã đọc ký tự này rồi, bỏ qua.');
+      return;
+    }
     console.log('Đang đọc câu:', currentSentence);
     speakText(currentSentence, readingSpeed);
+    setLastSpokenLetter(currentLetter || null);
   };
-
   const handleEdit = () => {
     setEditedSentence(currentSentence || '');
     setIsEditModalVisible(true);

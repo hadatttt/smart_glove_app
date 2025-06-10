@@ -21,12 +21,14 @@ export default function TabLayout() {
           fontWeight: 'bold',
         },
         headerShadowVisible: false,
+        headerTitle: () => null, // Ẩn hoàn toàn header title, không render View rỗng
+        headerShown: false, // Ẩn toàn bộ header của tab
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Dịch Ngôn Ngữ Ký Hiệu',
+          title: '', // Ẩn tiêu đề tab này
           tabBarLabel: 'Dịch',
           tabBarIcon: ({ color }) => <Home size={24} color={color} />,
         }}

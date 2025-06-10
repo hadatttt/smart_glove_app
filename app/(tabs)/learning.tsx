@@ -22,14 +22,13 @@ export default function LearningScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { paddingTop: 50 }]}>
       <StatusBar style="dark" />
-      
       <View style={styles.content}>
         <Text style={styles.subtitle}>
           Học ngôn ngữ ký hiệu qua các ký hiệu phổ biến dưới đây
         </Text>
-        
+
         <LearningCardList onItemPress={handleSelectItem} />
       </View>
     </SafeAreaView>

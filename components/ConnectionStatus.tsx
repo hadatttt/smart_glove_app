@@ -1,17 +1,23 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { Wifi, WifiOff, RefreshCw } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useTranslationStore } from '@/store/translation-store';
 import { connectToRaspberryPi } from '@/services/raspberry-pi-service';
+import { useAuthStore } from '@/store/auth-store';
 
 export const ConnectionStatus = () => {
   const { connectionStatus } = useTranslationStore();
+  const { isLoggedIn } = useAuthStore();
   const [isConnecting, setIsConnecting] = React.useState(false);
   const [ipAddress, setIpAddress] = React.useState('192.168.119.90');
   const [port, setPort] = React.useState('8080');
 
   const handleConnect = async () => {
+    if (!isLoggedIn) {
+      Alert.alert('Thông báo', 'Bạn cần đăng nhập để kết nối với thiết bị!');
+      return;
+    }
     setIsConnecting(true);
     try {
       await connectToRaspberryPi(ipAddress, parseInt(port, 10));

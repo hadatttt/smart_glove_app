@@ -11,7 +11,7 @@ interface LearningDetailProps {
 
 export const LearningDetail = ({ item, onBack }: LearningDetailProps) => {
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: 30 }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <ArrowLeft size={24} color={Colors.text} />
