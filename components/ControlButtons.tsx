@@ -6,6 +6,8 @@ import { useTranslationStore } from '@/store/translation-store';
 import { speakText } from '@/services/raspberry-pi-service';
 import { database } from '../firebase/firebaseConfig';
 import { ref, set } from 'firebase/database';
+import userSentences, { UserSentence } from '@/store/userSentences';
+import { useAuthStore } from '@/store/auth-store';
 
 export const ControlButtons = () => {
   const {
@@ -66,6 +68,23 @@ const [lastSpokenLetter, setLastSpokenLetter] = useState<string | null>(null);
     setIsEditModalVisible(true);
   };
 
+  function getCurrentUserId() {
+    // @ts-ignore
+    if (typeof globalThis !== 'undefined' && globalThis.loggedInUser && globalThis.loggedInUser.id) {
+      // @ts-ignore
+      return globalThis.loggedInUser.id;
+    }
+    // Lấy userId từ store nếu đã đăng nhập
+    const authUser = useAuthStore.getState().user;
+    if (authUser && authUser.id) {
+      return authUser.id;
+    }
+    if (typeof localStorage !== 'undefined') {
+      return localStorage.getItem('userId') || '';
+    }
+    return '';
+  }
+
   const handleSaveEdit = async () => {
     if (!editedSentence.trim()) {
       Alert.alert('Lỗi', 'Vui lòng nhập câu mới!');
@@ -78,14 +97,27 @@ const [lastSpokenLetter, setLastSpokenLetter] = useState<string | null>(null);
     }
 
     try {
-      const signRef = ref(database, `signs/${currentLetter}/sentences`);
-      await set(signRef, editedSentence);
-      console.log(`Đã cập nhật sentences cho ${currentLetter} thành: ${editedSentence}`);
+      const userId = getCurrentUserId();
+      // Lưu vào userSentences local (theo userId)
+      const idx = userSentences.findIndex((s) => s.char === currentLetter && s.userId === userId);
+      if (idx !== -1) {
+        userSentences[idx].sentence = editedSentence;
+      } else {
+        userSentences.push({ char: currentLetter, sentence: editedSentence, userId });
+      }
+      // Lưu lên Firebase theo usersentences/userId/letter
+      const userSentenceRef = ref(database, `usersentences/${userId}/${currentLetter}`);
+      await set(userSentenceRef, {
+        char: currentLetter,
+        sentence: editedSentence,
+        userId,
+      });
+      // Không ghi đè signs nữa!
       setCurrentSentence(editedSentence);
       speakText(`Đã cập nhật: ${editedSentence}`, readingSpeed);
     } catch (error) {
-      console.error('Lỗi khi ghi vào Firebase:', error);
-      Alert.alert('Lỗi', 'Không thể cập nhật câu vào Firebase!');
+      console.error('Lỗi khi lưu userSentences:', error);
+      Alert.alert('Lỗi', 'Không thể cập nhật câu!');
     }
 
     setIsEditModalVisible(false);

@@ -32,8 +32,20 @@ export default function LoginScreen() {
         return;
       }
       login();
+      // Tìm id của user trong danh sách nếu không có sẵn
+      let userId = undefined;
+      for (const key of Object.keys(users)) {
+        const u = users[key];
+        if (u && (u as any).username === (foundUser as any).username && (u as any).password === (foundUser as any).password) {
+          userId = (u as any).id || key;
+          break;
+        }
+      }
       // @ts-ignore
-      globalThis.loggedInUser = { username };
+      globalThis.loggedInUser = { username: (foundUser as any).username, id: userId };
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('userId', userId);
+      }
       router.replace('/(tabs)');
     } catch (error) {
       console.log('Lỗi đăng nhập:', error);

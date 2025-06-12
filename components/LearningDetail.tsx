@@ -1,15 +1,73 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Alert, TextInput, Modal } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';
+import { ref, set } from 'firebase/database';
+import { database } from '../firebase/firebaseConfig';
 import Colors from '@/constants/colors';
 import imageMap from '@/constants/imageMap';
 import { LearningItem } from '@/types/types';
+import userSentences from '@/store/userSentences';
+
+function getCurrentUserId() {
+  // @ts-ignore
+  if (typeof globalThis !== 'undefined' && globalThis.loggedInUser && globalThis.loggedInUser.id) {
+    // @ts-ignore
+    return globalThis.loggedInUser.id;
+  }
+  if (typeof localStorage !== 'undefined') {
+    return localStorage.getItem('userId') || '';
+  }
+  return '';
+}
+
 interface LearningDetailProps {
   item: LearningItem;
   onBack: () => void;
 }
 
 export const LearningDetail = ({ item, onBack }: LearningDetailProps) => {
+  // Lấy câu tuỳ chỉnh theo userId nếu có
+  const userId = getCurrentUserId();
+  const userCustom = userSentences.find((s) => s.char === item.letter && s.userId === userId);
+  const displaySentence = userCustom ? userCustom.sentence : item.sentences;
+
+  // State cho modal chỉnh sửa
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [editedSentence, setEditedSentence] = useState(displaySentence || '');
+
+  const handleEditSentence = () => {
+    setEditedSentence(displaySentence || '');
+    setIsEditModalVisible(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editedSentence.trim()) {
+      Alert.alert('Lỗi', 'Vui lòng nhập câu mới!');
+      return;
+    }
+    try {
+      // Lưu local
+      const idx = userSentences.findIndex((s) => s.char === item.letter && s.userId === userId);
+      if (idx !== -1) {
+        userSentences[idx].sentence = editedSentence;
+      } else {
+        userSentences.push({ char: item.letter, sentence: editedSentence, userId });
+      }
+      // Lưu lên Firebase
+      const userSentenceRef = ref(database, `usersentences/${userId}/${item.letter}`);
+      await set(userSentenceRef, {
+        char: item.letter,
+        sentence: editedSentence,
+        userId,
+      });
+      setIsEditModalVisible(false);
+      // Cập nhật lại displaySentence ngay sau khi chỉnh sửa
+      // (bằng cách setEditedSentence hoặc force update nếu cần)
+    } catch (error) {
+      Alert.alert('Lỗi', 'Không thể cập nhật câu!');
+    }
+  };
+
   return (
     <View style={[styles.container, { paddingTop: 30 }]}>
       <View style={styles.header}>
@@ -31,10 +89,13 @@ export const LearningDetail = ({ item, onBack }: LearningDetailProps) => {
           <Text style={styles.title}>{item.letter}</Text>
           <Text style={styles.description}>{item.description}</Text>
           
-          {item.sentences && (
+          {displaySentence && (
             <View style={styles.instructionsContainer}>
               <Text style={styles.instructionsTitle}>Ví dụ sử dụng:</Text>
-              <Text style={styles.stepText}>{item.sentences}</Text>
+              <Text style={styles.stepText}>{displaySentence}</Text>
+              <TouchableOpacity style={{marginTop: 8, alignSelf: 'flex-end'}} onPress={handleEditSentence}>
+                <Text style={{color: Colors.primary, fontWeight: 'bold'}}>Chỉnh sửa</Text>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -61,6 +122,33 @@ export const LearningDetail = ({ item, onBack }: LearningDetailProps) => {
           </View>
         </View>
       </ScrollView>
+      <Modal
+        visible={isEditModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsEditModalVisible(false)}
+      >
+        <View style={{flex:1,justifyContent:'center',alignItems:'center',backgroundColor:'rgba(0,0,0,0.5)'}}>
+          <View style={{backgroundColor:'#fff',borderRadius:16,padding:20,width:'80%'}}>
+            <Text style={{fontWeight:'bold',fontSize:18,marginBottom:8}}>Chỉnh sửa ví dụ sử dụng</Text>
+            <TextInput
+              style={{borderWidth:1,borderColor:Colors.secondary,borderRadius:8,padding:8,minHeight:60,marginBottom:12}}
+              value={editedSentence}
+              onChangeText={setEditedSentence}
+              placeholder="Nhập câu mới..."
+              multiline
+            />
+            <View style={{flexDirection:'row',justifyContent:'flex-end',gap:12}}>
+              <TouchableOpacity onPress={handleSaveEdit} style={{backgroundColor:Colors.primary,paddingVertical:8,paddingHorizontal:16,borderRadius:8}}>
+                <Text style={{color:'#fff',fontWeight:'bold'}}>Lưu</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={()=>setIsEditModalVisible(false)} style={{backgroundColor:Colors.secondary,paddingVertical:8,paddingHorizontal:16,borderRadius:8}}>
+                <Text style={{color:Colors.text,fontWeight:'bold'}}>Hủy</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };

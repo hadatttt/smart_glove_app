@@ -3,6 +3,9 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { database } from '../firebase/firebaseConfig';
 import { ref, get as firebaseGet, onValue } from 'firebase/database';
+import userSentences from './userSentences';
+import letterSentences from './letterSentences';
+import { useAuthStore } from './auth-store';
 
 interface TranslationMessage {
   id: string;
@@ -19,6 +22,12 @@ interface ConnectionStatus {
   firebaseConnected?: boolean;
 }
 
+interface UserSentence {
+  char: string;
+  sentence: string;
+  userId: string;
+}
+
 interface TranslationState {
   currentLetter: string;
   currentSentence: string;
@@ -27,6 +36,7 @@ interface TranslationState {
   connectionStatus: ConnectionStatus;
   readingSpeed: number;
   isRecording: boolean;
+  userId?: string; // Thêm userId vào state
 
   setCurrentLetter: (letter: string) => void;
   setCurrentSentence: (sentence: string) => void;
@@ -40,6 +50,19 @@ interface TranslationState {
   resetCurrentInput: () => void;
   addCharacterToSentence: (char: string) => void;
   checkFirebaseConnection: () => void;
+}
+
+// Helper to get current userId from globalThis or localStorage
+function getCurrentUserId() {
+  // @ts-ignore
+  if (typeof globalThis !== 'undefined' && globalThis.loggedInUser && globalThis.loggedInUser.id) {
+    // @ts-ignore
+    return globalThis.loggedInUser.id;
+  }
+  if (typeof localStorage !== 'undefined') {
+    return localStorage.getItem('userId') || '';
+  }
+  return '';
 }
 
 export const useTranslationStore = create<TranslationState>()(
@@ -70,27 +93,57 @@ export const useTranslationStore = create<TranslationState>()(
           }));
         }
 
-        try {
-          const snapshotBB = await firebaseGet(ref(database, `signs/${letter}${letter}`));
-          if (snapshotBB.exists && typeof snapshotBB.exists === 'function' && snapshotBB.exists()) {
-            const data = snapshotBB.val();
-            sentence = typeof data === 'string' ? data : (data.sentences || 'Không có câu cho chữ này');
-            console.log(`Data at signs/${letter}${letter}:`, data);
-          } else {
-            const snapshotSingle = await firebaseGet(ref(database, `signs/${letter}`));
-            if (snapshotSingle.exists && typeof snapshotSingle.exists === 'function' && snapshotSingle.exists()) {
-              const data = snapshotSingle.val();
-              sentence = typeof data === 'string' ? data : (data.sentences || 'Không có câu cho chữ này');
-              console.log(`Data at signs/${letter}:`, data);
-            } else {
-              console.log(`No data at signs/${letter}${letter} or signs/${letter}`);
+        // Lấy userId từ hệ thống đăng nhập
+        const userId = getCurrentUserId();
+
+        // 1. Ưu tiên lấy từ userSentences nếu có (theo userId)
+        let userCustom = userSentences.find((s) => s.char === letter && s.userId === userId);
+        if (!userCustom) {
+          // Nếu chưa có local, thử lấy từ Firebase usersentences
+          try {
+            const userSentenceSnap = await firebaseGet(ref(database, `usersentences/${userId}/${letter}`));
+            if (userSentenceSnap.exists && typeof userSentenceSnap.exists === 'function' && userSentenceSnap.exists()) {
+              const data = userSentenceSnap.val();
+              userCustom = data;
+              // Lưu local để lần sau ưu tiên lấy nhanh
+              userSentences.push({ char: letter, sentence: data.sentence, userId });
             }
+          } catch (e) {
+            // Không cần báo lỗi, chỉ fallback
           }
-          // Clean up trailing repetitive characters
-          sentence = sentence.replace(/(.)\1+$/, '$1');
-        } catch (error) {
-          console.error('Lỗi khi đọc Firebase:', error);
-          sentence = 'Lỗi khi lấy dữ liệu';
+        }
+        if (userCustom) {
+          sentence = userCustom.sentence;
+        } else {
+          // 2. Nếu không có, lấy từ signs trên Firebase như cũ
+          try {
+            const snapshotBB = await firebaseGet(ref(database, `signs/${letter}${letter}`));
+            if (snapshotBB.exists && typeof snapshotBB.exists === 'function' && snapshotBB.exists()) {
+              const data = snapshotBB.val();
+              sentence = typeof data === 'string' ? data : (data.sentences || 'Không có câu cho chữ này');
+              console.log(`Data at signs/${letter}${letter}:`, data);
+            } else {
+              const snapshotSingle = await firebaseGet(ref(database, `signs/${letter}`));
+              if (snapshotSingle.exists && typeof snapshotSingle.exists === 'function' && snapshotSingle.exists()) {
+                const data = snapshotSingle.val();
+                sentence = typeof data === 'string' ? data : (data.sentences || 'Không có câu cho chữ này');
+                console.log(`Data at signs/${letter}:`, data);
+              } else {
+                // 3. Nếu không có trên Firebase, lấy mặc định từ letterSentences
+                const defaultSentence = letterSentences.find((s) => s.char === letter);
+                if (defaultSentence) {
+                  sentence = defaultSentence.letter;
+                } else {
+                  console.log(`No data at signs/${letter}${letter} or signs/${letter}`);
+                }
+              }
+            }
+            // Clean up trailing repetitive characters
+            sentence = sentence.replace(/(.)\1+$/, '$1');
+          } catch (error) {
+            console.error('Lỗi khi đọc Firebase:', error);
+            sentence = 'Lỗi khi lấy dữ liệu';
+          }
         }
 
         set((state) => ({
