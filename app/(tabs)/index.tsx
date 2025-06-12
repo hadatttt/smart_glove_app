@@ -28,39 +28,68 @@ export default function TranslationScreen() {
   return (
     <SafeAreaView style={[styles.container, { paddingTop: 0 }]}>
       <StatusBar style="dark" />
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginTop: 50 }}>
-        <Text style={{ fontSize: 22, fontWeight: 'bold', color: Colors.text }}>Dịch Ngôn Ngữ Ký Hiệu</Text>
-        {isLoggedIn ? (
-          <TouchableOpacity
-            style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.primaryDark, borderRadius: 20, padding: 8 }}
-            activeOpacity={0.85}
-            onPress={() => router.replace('/profile')}
-          >
-            <User size={22} color={Colors.white} />
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              backgroundColor: Colors.primaryDark,
-              borderRadius: 20,
-              paddingVertical: 8,
-              paddingHorizontal: 16,
-              shadowColor: Colors.shadow,
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.15,
-              shadowRadius: 4,
-              elevation: 4,
-            }}
-            activeOpacity={0.85}
-            onPress={() => router.replace('/login')}
-          >
-            <LogIn size={18} color={Colors.white} style={{ marginRight: 6 }} />
-            <Text style={{ color: Colors.white, fontWeight: 'bold', fontSize: 15 }}>Đăng nhập</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+<View style={{ 
+  flexDirection: 'row', 
+  justifyContent: 'space-between', 
+  alignItems: 'center', 
+  paddingHorizontal: 16, 
+  marginTop: 50,
+  position: 'relative'
+}}>
+  {/* Text ở giữa */}
+  <Text style={{ 
+    fontSize: 22, 
+    fontWeight: 'bold', 
+    color: Colors.text,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+  }}>
+    Dịch Ngôn Ngữ Ký Hiệu
+  </Text>
+
+  {/* Icon hoặc button login/profile nằm phải */}
+  {isLoggedIn ? (
+    <TouchableOpacity
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: Colors.primaryDark,
+        borderRadius: 20,
+        padding: 8,
+        marginLeft: 'auto',
+      }}
+      activeOpacity={0.85}
+      onPress={() => router.replace('/profile')}
+    >
+      <User size={22} color={Colors.white} />
+    </TouchableOpacity>
+  ) : (
+<TouchableOpacity
+  style={{
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primaryDark,
+    borderRadius: 12,             // nhỏ hơn
+    paddingVertical: 4,           // giảm padding
+    paddingHorizontal: 10,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
+    marginLeft: 'auto',
+  }}
+  activeOpacity={0.85}
+  onPress={() => router.replace('/login')}
+>
+  <LogIn size={22} color={Colors.white} style={{ marginRight: 4 }} />
+</TouchableOpacity>
+
+  )}
+</View>
+
       <View style={styles.content}>
         <ConnectionStatus />
         <View style={styles.mainContent}>

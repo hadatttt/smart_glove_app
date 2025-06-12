@@ -34,7 +34,7 @@ export const connectToRaspberryPi = async (ipAddress: string = '', port: number 
         console.log('Kết nối WebSocket đã được thiết lập');
         useTranslationStore.getState().setConnectionStatus({
           connected: true,
-          deviceName: `Raspberry Pi (${ipAddress}:${port})`,
+          deviceName: `WS (${ipAddress}:${port})`,
         });
         resolve(true);
       };
@@ -51,7 +51,7 @@ export const connectToRaspberryPi = async (ipAddress: string = '', port: number 
             useTranslationStore.getState().setCurrentLetter(data.letter);
             
             // Tích lũy vào câu hiện tại
-            const currentSentence = useTranslationStore.getState().currentSentence + data.letter;
+            const currentSentence = useTranslationStore.getState().currentSentence;
             useTranslationStore.getState().setCurrentSentence(currentSentence);
           }
           
